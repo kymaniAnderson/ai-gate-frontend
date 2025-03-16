@@ -1,15 +1,38 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { DashboardShell } from "@/components/dashboard-shell"
-import { AdminSidebar } from "../_components/admin-sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { AlertTriangle, Building, CalendarDays, ShieldCheck, Users } from "lucide-react"
+import { DashboardShell } from "@/components/dashboard-shell";
+import { AdminSidebar } from "../_components/admin-sidebar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  AlertTriangle,
+  Building,
+  CalendarDays,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
 const visitorData = [
   { day: "Mon", count: 12 },
@@ -19,7 +42,7 @@ const visitorData = [
   { day: "Fri", count: 30 },
   { day: "Sat", count: 25 },
   { day: "Sun", count: 10 },
-]
+];
 
 const securityEvents = [
   {
@@ -43,7 +66,7 @@ const securityEvents = [
     time: "Yesterday",
     severity: "info",
   },
-]
+];
 
 const residents = [
   {
@@ -67,7 +90,7 @@ const residents = [
     activeVisitors: 0,
     status: "inactive",
   },
-]
+];
 
 export default function AdminDashboard() {
   return (
@@ -75,7 +98,9 @@ export default function AdminDashboard() {
       <div className="flex flex-col gap-6 p-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Overview of property access and security</p>
+          <p className="text-muted-foreground">
+            Overview of property access and security
+          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -103,7 +128,9 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Visitor Traffic</CardTitle>
-              <CardDescription>Weekly visitor entries across all properties</CardDescription>
+              <CardDescription>
+                Weekly visitor entries across all properties
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -121,7 +148,11 @@ export default function AdminDashboard() {
                       <XAxis dataKey="day" />
                       <YAxis />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                      <Bar
+                        dataKey="count"
+                        fill="var(--color-count)"
+                        radius={[4, 4, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -132,12 +163,17 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Security Events</CardTitle>
-              <CardDescription>Recent security alerts and events</CardDescription>
+              <CardDescription>
+                Recent security alerts and events
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {securityEvents.map((event) => (
-                  <div key={event.id} className="flex items-start gap-3 p-3 rounded-md border">
+                  <div
+                    key={event.id}
+                    className="flex items-start gap-3 p-3 rounded-md border"
+                  >
                     <div className="mt-0.5">
                       {event.severity === "critical" ? (
                         <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -150,9 +186,13 @@ export default function AdminDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="font-medium">{event.title}</p>
-                        <span className="text-xs text-muted-foreground">{event.time}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {event.time}
+                        </span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{event.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {event.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -164,7 +204,9 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Resident Overview</CardTitle>
-            <CardDescription>Manage resident access and permissions</CardDescription>
+            <CardDescription>
+              Manage resident access and permissions
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="active">
@@ -177,18 +219,25 @@ export default function AdminDashboard() {
                   {residents
                     .filter((resident) => resident.status === "active")
                     .map((resident) => (
-                      <div key={resident.id} className="flex items-center justify-between p-3 rounded-md border">
+                      <div
+                        key={resident.id}
+                        className="flex items-center justify-between p-3 rounded-md border"
+                      >
                         <div className="flex items-center gap-3">
                           <Building className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <p className="font-medium">{resident.name}</p>
-                            <p className="text-sm text-muted-foreground">Unit: {resident.unit}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Unit: {resident.unit}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-sm text-right">
                             <p>Active Visitors</p>
-                            <p className="font-medium">{resident.activeVisitors}</p>
+                            <p className="font-medium">
+                              {resident.activeVisitors}
+                            </p>
                           </div>
                           <Badge className="bg-green-500">Active</Badge>
                         </div>
@@ -201,18 +250,25 @@ export default function AdminDashboard() {
                   {residents
                     .filter((resident) => resident.status === "inactive")
                     .map((resident) => (
-                      <div key={resident.id} className="flex items-center justify-between p-3 rounded-md border">
+                      <div
+                        key={resident.id}
+                        className="flex items-center justify-between p-3 rounded-md border"
+                      >
                         <div className="flex items-center gap-3">
                           <Building className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <p className="font-medium">{resident.name}</p>
-                            <p className="text-sm text-muted-foreground">Unit: {resident.unit}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Unit: {resident.unit}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-sm text-right">
                             <p>Active Visitors</p>
-                            <p className="font-medium">{resident.activeVisitors}</p>
+                            <p className="font-medium">
+                              {resident.activeVisitors}
+                            </p>
                           </div>
                           <Badge variant="secondary">Inactive</Badge>
                         </div>
@@ -225,7 +281,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
     </DashboardShell>
-  )
+  );
 }
 
 function StatsCard({
@@ -234,10 +290,10 @@ function StatsCard({
   description,
   icon,
 }: {
-  title: string
-  value: string
-  description: string
-  icon: React.ReactNode
+  title: string;
+  value: string;
+  description: string;
+  icon: React.ReactNode;
 }) {
   return (
     <Card>
@@ -250,6 +306,5 @@ function StatsCard({
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
-  )
+  );
 }
-

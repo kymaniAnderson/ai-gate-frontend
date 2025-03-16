@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  AlertTriangle,
-  CalendarClock,
-  Home,
-  LogOut,
-  ShieldAlert,
-} from "lucide-react";
+import { CalendarClock, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
@@ -21,21 +15,6 @@ const sidebarItems = [
     title: "Entry Logs",
     href: "/security/logs",
     icon: CalendarClock,
-  },
-  {
-    title: "Alerts",
-    href: "/security/alerts",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Emergency",
-    href: "/security/emergency",
-    icon: ShieldAlert,
-  },
-  {
-    title: "Logout",
-    href: "/logout",
-    icon: LogOut,
   },
 ];
 

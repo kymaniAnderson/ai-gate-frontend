@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarClock, Home, LogOut, Users } from "lucide-react";
+import { CalendarClock, Home, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
@@ -20,11 +20,6 @@ const sidebarItems = [
     title: "Access Logs",
     href: "/resident/logs",
     icon: CalendarClock,
-  },
-  {
-    title: "Logout",
-    href: "/logout",
-    icon: LogOut,
   },
 ];
 
