@@ -150,7 +150,7 @@ export function VisitorList({
 
                 <div className="grid gap-4">
                   <QRCodeDisplay
-                    value={`https://ai-gate-frontend.vercel.app/visitor/${selectedVisitor?.accessCode}`}
+                    value={`https://ai-gate-frontend.vercel.app/visitor/${selectedVisitor?.pin}`}
                     size={250}
                   />
 
