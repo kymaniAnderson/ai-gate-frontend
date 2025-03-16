@@ -15,40 +15,71 @@ import { QRCodeDisplay } from "@/components/qr-code-display";
 import { PinDisplay } from "@/components/pin-display";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, HelpCircle, QrCode, Share2 } from "lucide-react";
-import { mockVisitors } from "@/lib/mock-data";
-import type { Visitor } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+
+// Add types based on the API documentation
+interface AccessPass {
+  id: string;
+  visitorName: string;
+  location: string;
+  name: string;
+  pin: string;
+  qrCode: string | null;
+  status: "active" | "expired" | "cancelled";
+  createdAt: string;
+  accessType: "time-bound" | "date-range" | "usage-limit";
+  validFrom?: string;
+  validTo?: string;
+  validTimeFrom?: string;
+  validTimeTo?: string;
+  usageLimit?: number;
+  usageCount?: number;
+}
 
 export default function VisitorAccessPage() {
   const params = useParams();
   const { toast } = useToast();
-  const [visitor, setVisitor] = useState<Visitor | null>(null);
+  const [accessPass, setAccessPass] = useState<AccessPass | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO fetch from an API
-    const id = params.id as string;
-    const foundVisitor = mockVisitors.find((v) => v.id === id);
+    const fetchAccessPass = async () => {
+      try {
+        const code = params.id as string;
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/access-passes/code/${code}`
+        );
 
-    setTimeout(() => {
-      if (foundVisitor) {
-        setVisitor(foundVisitor);
-      } else {
-        setError("Access pass not found or has expired");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Access pass not found");
+          }
+          throw new Error("Failed to fetch access pass");
+        }
+
+        const data = await response.json();
+        setAccessPass(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1000);
+    };
+
+    fetchAccessPass();
   }, [params.id]);
 
   const shareAccess = () => {
-    if (!visitor) return;
+    if (!accessPass) return;
 
     if (navigator.share) {
       navigator
         .share({
-          title: `Access Pass for ${visitor.location}`,
-          text: `Here is your access pass for ${visitor.location}`,
+          title: `Access Pass for ${accessPass.location}`,
+          text: `Here is your access pass for ${accessPass.location}`,
           url: window.location.href,
         })
         .catch((err) => {
@@ -79,7 +110,7 @@ export default function VisitorAccessPage() {
     );
   }
 
-  if (error || !visitor) {
+  if (error || !accessPass) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
         <Card className="w-full max-w-md">
@@ -113,66 +144,68 @@ export default function VisitorAccessPage() {
           <div className="flex justify-center mb-2">
             <Badge
               className={
-                visitor.status === "active"
+                accessPass.status === "active"
                   ? "bg-green-500"
-                  : visitor.status === "expired"
+                  : accessPass.status === "expired"
                   ? "bg-secondary"
-                  : visitor.status === "revoked"
-                  ? "bg-destructive"
-                  : "bg-amber-500"
+                  : "bg-destructive"
               }
             >
-              {visitor.status === "active"
+              {accessPass.status === "active"
                 ? "Active"
-                : visitor.status === "expired"
+                : accessPass.status === "expired"
                 ? "Expired"
-                : visitor.status === "revoked"
-                ? "Revoked"
-                : "Pending"}
+                : "Cancelled"}
             </Badge>
           </div>
-          <CardTitle>Access Pass for {visitor.location}</CardTitle>
-          <CardDescription>Welcome, {visitor.name}</CardDescription>
+          <CardTitle>Access Pass for {accessPass.location}</CardTitle>
+          <CardDescription>Welcome, {accessPass.visitorName}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-col items-center gap-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Scan this QR code at the entrance
-            </h3>
-            <QRCodeDisplay
-              value={`https://sleekentry.com/visitor/${visitor.id}`}
-              size={200}
-              className="w-full"
-            />
-          </div>
+          {accessPass.qrCode && (
+            <div className="flex flex-col items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Scan this QR code at the entrance
+              </h3>
+              <QRCodeDisplay
+                value={accessPass.qrCode}
+                size={200}
+                className="w-full"
+              />
+            </div>
+          )}
 
           <div className="flex flex-col items-center gap-2">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Or use this PIN code
+              {accessPass.qrCode ? "Or use this PIN code" : "Use this PIN code"}
             </h3>
-            <PinDisplay pin={visitor.pin} />
+            <PinDisplay pin={accessPass.pin} />
           </div>
 
           <div className="rounded-md bg-muted p-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {visitor.validFrom}{" "}
-                {visitor.validTo ? `- ${visitor.validTo}` : ""}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {visitor.validTimeFrom}{" "}
-                {visitor.validTimeTo ? `- ${visitor.validTimeTo}` : ""}
-              </span>
-            </div>
-            {visitor.usageLimit && (
+            {(accessPass.validFrom || accessPass.validTo) && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {accessPass.validFrom}{" "}
+                  {accessPass.validTo ? `- ${accessPass.validTo}` : ""}
+                </span>
+              </div>
+            )}
+            {(accessPass.validTimeFrom || accessPass.validTimeTo) && (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {accessPass.validTimeFrom}{" "}
+                  {accessPass.validTimeTo ? `- ${accessPass.validTimeTo}` : ""}
+                </span>
+              </div>
+            )}
+            {accessPass.usageLimit !== undefined && (
               <div className="flex items-center gap-2 text-sm">
                 <QrCode className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  {visitor.usageCount} / {visitor.usageLimit} entries used
+                  {accessPass.usageCount} / {accessPass.usageLimit} entries used
                 </span>
               </div>
             )}
