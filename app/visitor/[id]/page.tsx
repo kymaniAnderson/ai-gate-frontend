@@ -168,7 +168,7 @@ export default function VisitorAccessPage() {
                 Scan this QR code at the entrance
               </h3>
               <QRCodeDisplay
-                value={accessPass.qrCode}
+                value={`https://ai-gate-frontend.vercel.app/visitor/${accessPass.pin}`}
                 size={200}
                 className="w-full"
               />

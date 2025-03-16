@@ -25,11 +25,31 @@ import {
   QrCode,
   ShieldAlert,
   XCircle,
+  Check,
+  X,
 } from "lucide-react";
 import { mockVisitors } from "@/lib/mock-data";
 import { Html5Qrcode } from "html5-qrcode";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+interface AccessPass {
+  id: string;
+  visitorName: string;
+  location: string;
+  name: string;
+  pin: string;
+  qrCode: string | null;
+  status: "active" | "expired" | "cancelled";
+  createdAt: string;
+  accessType: "time-bound" | "date-range" | "usage-limit";
+  validFrom?: string;
+  validTo?: string;
+  validTimeFrom?: string;
+  validTimeTo?: string;
+  usageLimit?: number;
+  usageCount?: number;
+}
 
 export default function SecurityDashboard() {
   const { toast } = useToast();
@@ -64,7 +84,7 @@ export default function SecurityDashboard() {
   const [pin, setPin] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanResult, setScanResult] = useState<AccessPass | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
@@ -76,6 +96,40 @@ export default function SecurityDashboard() {
       }
     };
   }, []);
+
+  const verifyAccessPass = async (pin: string) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/access-passes/code/${pin}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          response.status === 404
+            ? "Invalid PIN code"
+            : "Failed to verify access pass"
+        );
+      }
+
+      const data = await response.json();
+      setScanResult(data);
+
+      toast({
+        title: data.status === "active" ? "Access Granted" : "Access Denied",
+        description: `${data.visitorName} - Pass is ${data.status}`,
+        variant: data.status === "active" ? "default" : "destructive",
+      });
+
+      return data;
+    } catch (err) {
+      throw err;
+    }
+  };
 
   const startScanner = async () => {
     try {
@@ -89,48 +143,23 @@ export default function SecurityDashboard() {
 
       setIsScanning(true);
       await scanner.start(
-        { facingMode: "environment" }, // Use back camera if available
+        { facingMode: "environment" },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
         },
         async (decodedText) => {
           try {
-            const code = decodedText.split("/").pop();
-            if (!code) throw new Error("Invalid QR code");
+            // Extract PIN from URL
+            const pin = decodedText.split("/visitor/").pop();
+            if (!pin) throw new Error("Invalid QR code format");
 
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/access-passes/code/${code}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error(
-                response.status === 404
-                  ? "Invalid QR code"
-                  : "Failed to verify access pass"
-              );
+            const data = await verifyAccessPass(pin);
+            if (data) {
+              await stopScanner();
             }
-
-            const data = await response.json();
-            setScanResult(data);
-
-            // Stop scanning after finding a valid QR code
-            await stopScanner();
-
-            toast({
-              title:
-                data.status === "active" ? "Access Granted" : "Access Denied",
-              description: `${data.visitorName} - Pass is ${data.status}`,
-              variant: data.status === "active" ? "default" : "destructive",
-            });
           } catch (err) {
             console.error("QR code verification error:", err);
-            // Don't stop scanning on error, just show the toast
             toast({
               title: "Invalid QR Code",
               description:
@@ -140,7 +169,6 @@ export default function SecurityDashboard() {
           }
         },
         (errorMessage) => {
-          // Ignore errors during scanning as they're usually just failed reads
           console.debug("QR Scan error:", errorMessage);
         }
       );
@@ -163,48 +191,23 @@ export default function SecurityDashboard() {
     setIsScanning(false);
   };
 
-  const handlePinComplete = (pin: string) => {
-    // In a real app, this would validate the PIN with the server
-    const visitor = mockVisitors.find((v) => v.pin === pin);
+  const handlePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pin) return;
 
-    if (visitor && visitor.status === "active") {
-      toast({
-        title: "Access Granted",
-        description: `${visitor.name} has been granted access.`,
-        variant: "default",
-      });
-
-      setRecentEntries([
-        {
-          id: Date.now().toString(),
-          name: visitor.name,
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          status: "approved",
-        },
-        ...recentEntries,
-      ]);
-    } else {
+    setLoading(true);
+    try {
+      await verifyAccessPass(pin);
+      setPin("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to verify access");
       toast({
         title: "Access Denied",
-        description: "Invalid or expired PIN.",
+        description: err instanceof Error ? err.message : "Invalid access pass",
         variant: "destructive",
       });
-
-      setRecentEntries([
-        {
-          id: Date.now().toString(),
-          name: "Unknown Visitor",
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          status: "denied",
-        },
-        ...recentEntries,
-      ]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -271,6 +274,34 @@ export default function SecurityDashboard() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Manual PIN Entry</CardTitle>
+              <CardDescription>Enter the visitor's PIN code</CardDescription>
+            </CardHeader>
+            <form onSubmit={handlePinSubmit}>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="pin">PIN Code</Label>
+                  <Input
+                    id="pin"
+                    placeholder="Enter 6-digit PIN"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    maxLength={6}
+                    pattern="\d{6}"
+                    required
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Verifying..." : "Verify PIN"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>QR Code Scanner</CardTitle>
               <CardDescription>
                 {isScanning
@@ -333,6 +364,82 @@ export default function SecurityDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {(scanResult || error) && (
+          <Card
+            className={
+              error
+                ? "border-destructive"
+                : scanResult?.status === "active"
+                ? "border-green-500"
+                : "border-destructive"
+            }
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {error ? (
+                  <>
+                    <X className="h-5 w-5 text-destructive" />
+                    <span className="text-destructive">Access Denied</span>
+                  </>
+                ) : scanResult?.status === "active" ? (
+                  <>
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span className="text-green-500">Access Granted</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="h-5 w-5 text-destructive" />
+                    <span className="text-destructive">Access Denied</span>
+                  </>
+                )}
+              </CardTitle>
+            </CardHeader>
+            {scanResult && !error && (
+              <CardContent>
+                <dl className="space-y-2">
+                  <div>
+                    <dt className="text-sm text-muted-foreground">Visitor</dt>
+                    <dd className="text-sm font-medium">
+                      {scanResult.visitorName}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-muted-foreground">Location</dt>
+                    <dd className="text-sm font-medium">
+                      {scanResult.location}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-muted-foreground">Status</dt>
+                    <dd className="text-sm font-medium capitalize">
+                      {scanResult.status}
+                    </dd>
+                  </div>
+                  {scanResult.accessType === "time-bound" && (
+                    <div>
+                      <dt className="text-sm text-muted-foreground">
+                        Valid Time
+                      </dt>
+                      <dd className="text-sm font-medium">
+                        {scanResult.validTimeFrom} - {scanResult.validTimeTo}
+                      </dd>
+                    </div>
+                  )}
+                  {scanResult.accessType === "usage-limit" && (
+                    <div>
+                      <dt className="text-sm text-muted-foreground">Usage</dt>
+                      <dd className="text-sm font-medium">
+                        {scanResult.usageCount} / {scanResult.usageLimit}{" "}
+                        entries
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </CardContent>
+            )}
+          </Card>
+        )}
       </div>
     </DashboardShell>
   );
