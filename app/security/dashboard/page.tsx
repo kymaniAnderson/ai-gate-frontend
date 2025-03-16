@@ -274,34 +274,6 @@ export default function SecurityDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Manual PIN Entry</CardTitle>
-              <CardDescription>Enter the visitor's PIN code</CardDescription>
-            </CardHeader>
-            <form onSubmit={handlePinSubmit}>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label htmlFor="pin">PIN Code</Label>
-                  <Input
-                    id="pin"
-                    placeholder="Enter 6-digit PIN"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    maxLength={6}
-                    pattern="\d{6}"
-                    required
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Verifying..." : "Verify PIN"}
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>QR Code Scanner</CardTitle>
               <CardDescription>
                 {isScanning

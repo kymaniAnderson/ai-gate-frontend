@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarClock, Home } from "lucide-react";
+import { CalendarClock, FileText, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
@@ -15,6 +15,11 @@ const sidebarItems = [
     title: "Entry Logs",
     href: "/security/logs",
     icon: CalendarClock,
+  },
+  {
+    title: "Incidents",
+    href: "/security/incidents",
+    icon: FileText,
   },
 ];
 
