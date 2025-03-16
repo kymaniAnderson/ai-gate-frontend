@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { LogOut, Menu, User } from "lucide-react";
+import { LogOut, Menu, QrCode, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +69,10 @@ export function DashboardShell({
         </Sheet>
         <div className="flex-1">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="text-primary">AccessPass</span>
+            <div className="flex-1 flex items-center gap-2 font-semibold">
+              <QrCode className="h-6 w-6 text-primary" />
+              <span className="text-primary text-xl">AccessPass</span>
+            </div>
           </Link>
         </div>
         <DropdownMenu>
@@ -88,13 +91,6 @@ export function DashboardShell({
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/profile">Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings">Settings</Link>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {

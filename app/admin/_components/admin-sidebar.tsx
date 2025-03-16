@@ -2,14 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Building,
-  CalendarClock,
-  Home,
-  LogOut,
-  ShieldAlert,
-  Users,
-} from "lucide-react";
+import { Home, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
@@ -22,26 +15,6 @@ const sidebarItems = [
     title: "Residents",
     href: "/admin/residents",
     icon: Users,
-  },
-  {
-    title: "Properties",
-    href: "/admin/properties",
-    icon: Building,
-  },
-  {
-    title: "Access Logs",
-    href: "/admin/logs",
-    icon: CalendarClock,
-  },
-  {
-    title: "Security",
-    href: "/admin/security",
-    icon: ShieldAlert,
-  },
-  {
-    title: "Logout",
-    href: "/logout",
-    icon: LogOut,
   },
 ];
 

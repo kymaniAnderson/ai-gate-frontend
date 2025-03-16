@@ -1,74 +1,91 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const { login } = useAuth()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { toast } = useToast()
+  const { login, user } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [role, setRole] = useState(searchParams.get("role") || "resident")
-  const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const success = await login(email, password, role as any)
+      const data = await login(email, password);
 
-      if (success) {
+      if (data?.jwt) {
         toast({
           title: "Login successful",
-          description: `Welcome back!`,
-        })
+          description: "Welcome back!",
+          variant: "default",
+          duration: 3000,
+        });
 
-        // Redirect based on role
-        if (role === "resident") {
-          router.push("/resident/dashboard")
-        } else if (role === "security") {
-          router.push("/security/dashboard")
-        } else if (role === "admin") {
-          router.push("/admin/dashboard")
+        // Wait a brief moment before redirecting to ensure toast is visible
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Get user role from the stored user data
+        const storedUser = localStorage.getItem("user");
+        const userRole = storedUser ? JSON.parse(storedUser).role : null;
+
+        // Redirect based on role from user data
+        if (userRole === "resident") {
+          router.push("/resident/dashboard");
+        } else if (userRole === "security") {
+          router.push("/security/dashboard");
+        } else if (userRole === "admin") {
+          router.push("/admin/dashboard");
         }
       } else {
         toast({
           title: "Login failed",
           description: "Please check your credentials and try again.",
           variant: "destructive",
-        })
+          duration: 3000,
+        });
       }
     } catch (error) {
       toast({
         title: "Login error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+        duration: 3000,
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardDescription>
+            Enter your credentials to access your account
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -93,23 +110,6 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label>I am a:</Label>
-              <RadioGroup value={role} onValueChange={setRole} className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="resident" id="resident" />
-                  <Label htmlFor="resident">Resident</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="security" id="security" />
-                  <Label htmlFor="security">Security Guard</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="admin" id="admin" />
-                  <Label htmlFor="admin">Property Manager/Admin</Label>
-                </div>
-              </RadioGroup>
-            </div>
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -124,6 +124,5 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
-  )
+  );
 }
-

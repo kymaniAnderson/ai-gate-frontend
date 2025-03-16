@@ -1,81 +1,112 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react";
 
-import { createContext, useContext, useState, useEffect } from "react"
-
-type UserRole = "resident" | "security" | "admin" | null
+type UserRole = "resident" | "security" | "admin" | null;
 type User = {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-} | null
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+} | null;
 
 type AuthContextType = {
-  user: User
-  login: (email: string, password: string, role: UserRole) => Promise<boolean>
-  logout: () => void
-  isLoading: boolean
-}
+  user: User;
+  login: (email: string, password: string) => Promise<any>; // Changed to return API response
+  logout: () => void;
+  isLoading: boolean;
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check for existing session
-    const storedUser = localStorage.getItem("user")
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false)
-  }, [])
+    setIsLoading(false);
+  }, []);
 
-  const login = async (email: string, password: string, role: UserRole) => {
-    setIsLoading(true)
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      // Simulating authentication for demo purposes
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Login with Strapi
+      const loginResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/local`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            identifier: email,
+            password: password,
+          }),
+        }
+      );
 
-      const mockUsers = {
-        resident: { id: "r1", name: "John Resident", email, role: "resident" as const },
-        security: { id: "s1", name: "Sam Security", email, role: "security" as const },
-        admin: { id: "a1", name: "Alice Admin", email, role: "admin" as const },
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        throw new Error(loginData.error?.message || "Login failed");
       }
 
-      const newUser = role ? mockUsers[role] : null
+      // Get user details including role
+      const userResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${loginData.jwt}`,
+          },
+        }
+      );
 
-      if (newUser) {
-        setUser(newUser)
-        localStorage.setItem("user", JSON.stringify(newUser))
-        return true
-      }
-      return false
+      const userData = await userResponse.json();
+
+      // Format user data for storage
+      const userToStore = {
+        id: userData.id.toString(),
+        name: userData.username,
+        email: userData.email,
+        role: userData.role?.type || "resident", // Default to resident if no role
+      };
+
+      // Store user data and token
+      localStorage.setItem("token", loginData.jwt);
+      localStorage.setItem("user", JSON.stringify(userToStore));
+      setUser(userToStore);
+
+      return loginData;
     } catch (error) {
-      console.error("Login failed:", error)
-      return false
+      console.error("Login failed:", error);
+      return null;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-  }
+    setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+  };
 
-  return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }
-
