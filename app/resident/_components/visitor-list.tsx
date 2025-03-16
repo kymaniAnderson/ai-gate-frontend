@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 interface VisitorListProps {
-  visitors: Visitor[];
+  visitors: any[];
   isPast?: boolean;
   onRevokeAccess?: (id: string) => void;
 }
@@ -150,7 +150,7 @@ export function VisitorList({
 
                 <div className="grid gap-4">
                   <QRCodeDisplay
-                    value={`https://ai-gate-frontend.vercel.app/visitor/${selectedVisitor?.id}`}
+                    value={`https://ai-gate-frontend.vercel.app/visitor/${selectedVisitor?.accessCode}`}
                     size={250}
                   />
 
@@ -187,7 +187,7 @@ export function VisitorList({
                     className="flex-1"
                     onClick={() =>
                       copyToClipboard(
-                        `https://ai-gate-frontend.vercel.app/visitor/${selectedVisitor?.id}`
+                        `https://ai-gate-frontend.vercel.app/visitor/${selectedVisitor?.pin}`
                       )
                     }
                   >
